@@ -20,17 +20,19 @@ class QdrantStorage:
         self.client.upsert(self.collection, points=points)
 
     def search(self, query_vector, top_k: int=5): 
-        results = self.client.search(
+        # 1. On remplace .search() par .query_points()
+        reponse = self.client.query_points(
             collection_name=self.collection,
-            query_vector=query_vector, 
+            query=query_vector, # 2. L'argument s'appelle 'query' et plus 'query_vector'
             with_payload=True, 
             limit=top_k
         )
+        
         contexts = []
-        # 3. CORRECTION BUG : On utilise set() pour pouvoir utiliser .add() et éviter les doublons
         sources = set()
 
-        for r in results: 
+        # 3. Les résultats se trouvent maintenant dans reponse.points
+        for r in reponse.points: 
             payload = getattr(r, "payload", None) or {}
             text = payload.get("text", "")
             source = payload.get("source", "")
